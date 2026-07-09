@@ -1,19 +1,11 @@
-import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/index.css';
-import App from './App.tsx';
-import { createBrowserRouter } from 'react-router';
-import { RouterProvider } from 'react-router/dom';
-
-const router = createBrowserRouter([
-  {
-    path: '/',
-    Component: App,
-  },
-]);
+import { RouterProvider } from 'react-router';
+import { router } from './routes/router';
+import { AuthProvider } from './context/AuthProvider';
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />,
-  </StrictMode>,
+  <AuthProvider>
+    <RouterProvider router={router} />
+  </AuthProvider>,
 );
