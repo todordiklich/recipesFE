@@ -1,0 +1,31 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 4rem;
+  text-align: center;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  text-align: start;
+  gap: 0.5rem;
+}
+
+.error {
+  color: var(--error);
+}
