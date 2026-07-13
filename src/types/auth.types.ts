@@ -10,10 +10,30 @@ export interface LoginResponse {
   refreshToken: string;
 }
 
+export interface LoginUser {
+  email: string;
+  password: string;
+}
+
+export interface CreateUser {
+  email: string;
+  password: string;
+  name: string;
+}
+
 export interface AuthContextType {
   user: LoginResponse | null;
   loading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (logindata: LoginUser) => Promise<void>;
   logout: () => void;
 }
+
+export type ApiErrorResponse = {
+  success: boolean;
+  message: string;
+  details?: {
+    field: string;
+    message: string;
+  }[];
+};

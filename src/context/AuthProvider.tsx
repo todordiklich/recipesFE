@@ -1,50 +1,46 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { loginUser } from '../api/auth.api';
 import { AuthContext } from './AuthContext';
-import type { LoginResponse } from '../types/auth.types';
+import type { LoginResponse, LoginUser } from '../types/auth.types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+const AUTH_USER_QUERY_KEY = ['auth-user'];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<LoginResponse | null>(() => {
-    const localStorageData = localStorage.getItem('user');
-    return localStorageData ? JSON.parse(localStorageData) : null;
+  const queryClient = useQueryClient();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: AUTH_USER_QUERY_KEY,
+    queryFn: (): LoginResponse | null => {
+      const storedUser = localStorage.getItem('user');
+      return storedUser ? JSON.parse(storedUser) : null;
+    },
+    staleTime: Infinity,
   });
-  const [loading, setLoading] = useState(false);
 
-  const login = async (email: string, password: string): Promise<void> => {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/auth/login`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        },
-      );
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
-      }
-      const data: LoginResponse = await response.json();
-      setUser(data);
-
+  const loginMutation = useMutation({
+    mutationFn: loginUser,
+    onSuccess: (data) => {
       localStorage.setItem('user', JSON.stringify(data));
-    } finally {
-      setLoading(false);
-    }
+      queryClient.setQueryData(AUTH_USER_QUERY_KEY, data);
+    },
+  });
+
+  const login = async (loginData: LoginUser): Promise<void> => {
+    await loginMutation.mutateAsync(loginData);
   };
 
   const logout = () => {
-    setUser(null);
+    console.log('logout');
     localStorage.removeItem('user');
+    queryClient.setQueryData(AUTH_USER_QUERY_KEY, null);
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user,
-        loading,
+        user: user ?? null,
+        loading: isLoading || loginMutation.isPending,
         isAuthenticated: !!user,
         login,
         logout,

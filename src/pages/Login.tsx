@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router';
 import styles from './Login.module.css';
@@ -6,13 +6,18 @@ import Button from '../components/Button';
 import { useAuth } from '../context/useAuth';
 
 export default function Login() {
-  const { login, loading } = useAuth();
-  const navigate = useNavigate();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
   const [error, setError] = useState('');
+
+  const navigate = useNavigate();
+  const { login, loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,7 +25,7 @@ export default function Login() {
     setError('');
 
     try {
-      await login(email, password);
+      await login({ email, password });
 
       navigate('/');
     } catch {

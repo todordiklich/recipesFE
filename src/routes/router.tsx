@@ -6,6 +6,7 @@ import ProtectedRoutes from './ProtectedRoutes';
 import Recipes from '../pages/Recipes';
 import RecipeDetail from '../pages/RecipeDetail';
 import Signup from '../pages/Signup';
+import Logout from '../pages/Logout';
 
 export const router = createBrowserRouter([
   {
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
       {
         path: '/login',
         element: <Login />,
+      },
+      {
+        path: '/logout',
+        element: <Logout />,
       },
       {
         path: '/signup',
