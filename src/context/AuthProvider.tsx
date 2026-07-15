@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { loginUser } from '../api/auth.api';
 import { AuthContext } from './AuthContext';
 import type { LoginResponse, LoginUser } from '../types/auth.types';
@@ -26,14 +26,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  useEffect(() => {
+    const syncAuthState = () => {
+      const storedUser = localStorage.getItem('user');
+      queryClient.setQueryData(
+        AUTH_USER_QUERY_KEY,
+        storedUser ? JSON.parse(storedUser) : null,
+      );
+    };
+
+    window.addEventListener('auth:updated', syncAuthState);
+    window.addEventListener('auth:logout', syncAuthState);
+
+    return () => {
+      window.removeEventListener('auth:updated', syncAuthState);
+      window.removeEventListener('auth:logout', syncAuthState);
+    };
+  }, [queryClient]);
+
   const login = async (loginData: LoginUser): Promise<void> => {
     await loginMutation.mutateAsync(loginData);
   };
 
   const logout = () => {
-    console.log('logout');
     localStorage.removeItem('user');
     queryClient.setQueryData(AUTH_USER_QUERY_KEY, null);
+    window.dispatchEvent(new Event('auth:logout'));
   };
 
   return (
