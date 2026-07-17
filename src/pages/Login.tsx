@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { type SubmitEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import styles from './Login.module.css';
 import Button from '../components/Button';
 import { useAuth } from '../context/useAuth';
@@ -11,13 +11,19 @@ export default function Login() {
   const [error, setError] = useState('');
 
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loading, isAuthenticated } = useAuth();
+
+  const from = (
+    location.state as { from?: { pathname?: string; search?: string } } | null
+  )?.from;
+  const redirectTo = from ? `${from.pathname ?? '/'}${from.search ?? ''}` : '/';
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, redirectTo]);
 
   async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,7 +33,7 @@ export default function Login() {
     try {
       await login({ email, password });
 
-      navigate('/');
+      navigate(redirectTo, { replace: true });
     } catch {
       setError('Invalid email or password');
     }

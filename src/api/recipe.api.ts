@@ -1,4 +1,9 @@
-import type { Difficulty, ApiRecipesResponse } from '../types/recipe.types';
+import type {
+  Difficulty,
+  ApiRecipesResponse,
+  Comment,
+  Recipe,
+} from '../types/recipe.types';
 import { apiRequest } from './client';
 
 export async function getRecipes(
@@ -19,5 +24,21 @@ export async function getRecipes(
 
   return apiRequest<ApiRecipesResponse>(`/recipes?${query.toString()}`, {
     method: 'GET',
+  });
+}
+
+export async function getRecipeById(id: string): Promise<Recipe> {
+  return apiRequest<Recipe>(`/recipes/${id}`, {
+    method: 'GET',
+  });
+}
+
+export async function createComment(
+  id: string,
+  content: string,
+): Promise<Comment> {
+  return apiRequest<Comment>(`/recipes/${id}/comment`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
   });
 }

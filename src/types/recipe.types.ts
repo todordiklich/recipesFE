@@ -14,8 +14,8 @@ export interface User {
 export interface Comment {
   id: number;
   content: string;
-  createdAt: string;
-  author: User;
+  createdAt?: string;
+  author?: User;
 }
 
 export interface Recipe {
