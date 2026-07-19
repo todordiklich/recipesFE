@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { type SubmitEvent } from 'react';
 import { useParams } from 'react-router';
-import { getRecipeById, createComment } from '../api/recipe.api';
+import {
+  getRecipeById,
+  createComment,
+  updateRecipe,
+  favouriteRecipe,
+  addToFavourites,
+} from '../api/recipe.api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './RecipeDetail.module.css';
-import type { Recipe } from '../types/recipe.types';
+import type { Difficulty, Ingredient, Recipe } from '../types/recipe.types';
 import { useAuth } from '../context/useAuth';
+import Button from '../components/Button';
 
 export default function RecipeDetail() {
   const { id } = useParams();
@@ -13,6 +20,15 @@ export default function RecipeDetail() {
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [cookingTime, setCookingTime] = useState('');
+  const [difficulty, setDifficulty] = useState<Difficulty>('EASY');
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [ingredientName, setIngredientName] = useState('');
+  const [ingredientQuantity, setIngredientQuantity] = useState('');
+  const [editError, setEditError] = useState('');
   const {
     data: recipeData,
     isLoading,
@@ -20,6 +36,21 @@ export default function RecipeDetail() {
   } = useQuery({
     queryKey: ['recipe', id],
     queryFn: () => getRecipeById(id!),
+  });
+
+  const { data: favouriteData } = useQuery({
+    queryKey: ['favourite', id],
+    queryFn: () => favouriteRecipe(id!),
+  });
+
+  const favouriteMutation = useMutation({
+    mutationFn: (recipeId: string) => addToFavourites(recipeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['favourite', id] });
+    },
+    onError: () => {
+      setSubmitError('Unable to update favourite status right now.');
+    },
   });
 
   const commentMutation = useMutation({
@@ -50,6 +81,45 @@ export default function RecipeDetail() {
     },
   });
 
+  const updateRecipeMutation = useMutation({
+    mutationKey: ['recipe', id],
+    mutationFn: ({
+      recipeId,
+      payload,
+    }: {
+      recipeId: string;
+      payload: Partial<Recipe>;
+    }) => updateRecipe(recipeId, payload),
+    onSuccess: (updatedRecipe, { recipeId }) => {
+      queryClient.setQueryData<Recipe>(
+        ['recipe', recipeId],
+        (currentRecipe) => {
+          if (!currentRecipe) {
+            return updatedRecipe;
+          }
+
+          return {
+            ...currentRecipe,
+            ...updatedRecipe,
+            ingredients:
+              updatedRecipe.ingredients ?? currentRecipe.ingredients ?? [],
+          };
+        },
+      );
+      queryClient.invalidateQueries({ queryKey: ['recipe', recipeId] });
+      setTitle(updatedRecipe.title);
+      setDescription(updatedRecipe.description ?? '');
+      setCookingTime(updatedRecipe.cookingTime?.toString() ?? '');
+      setDifficulty(updatedRecipe.difficulty);
+      setIngredients(updatedRecipe.ingredients ?? []);
+      setIsEditing(false);
+      setEditError('');
+    },
+    onError: () => {
+      setEditError('Unable to update the recipe right now.');
+    },
+  });
+
   function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -59,6 +129,116 @@ export default function RecipeDetail() {
     }
 
     commentMutation.mutate({ recipeId: id, content: trimmedComment });
+  }
+
+  function handleAddIngredient() {
+    const name = ingredientName.trim();
+    const quantity = ingredientQuantity.trim();
+
+    if (!name || !quantity) {
+      setEditError('Ingredient name and quantity are required.');
+      return;
+    }
+
+    setIngredients((current) => {
+      const normalized = current.filter(
+        (ingredient) =>
+          !(
+            ingredient.name.toLowerCase() === name.toLowerCase() &&
+            ingredient.quantity.toLowerCase() === quantity.toLowerCase()
+          ),
+      );
+
+      return [...normalized, { name, quantity }];
+    });
+    setIngredientName('');
+    setIngredientQuantity('');
+    setEditError('');
+  }
+
+  function handleRemoveIngredient(index: number) {
+    setIngredients((current) =>
+      current.filter((_, currentIndex) => currentIndex !== index),
+    );
+  }
+
+  function handleSaveRecipe() {
+    if (!id || !title.trim() || !description.trim()) {
+      setEditError('Title and description are required.');
+      return;
+    }
+
+    const existingIngredients = (recipeData?.ingredients ?? []).map((ing) => ({
+      name: ing.name.trim().toLowerCase(),
+      quantity: ing.quantity.trim().toLowerCase(),
+    }));
+
+    const normalizedIngredients = ingredients.reduce<Ingredient[]>(
+      (acc, ingredient) => {
+        const name = ingredient.name.trim();
+        const quantity = ingredient.quantity.trim();
+
+        if (!name || !quantity) {
+          return acc;
+        }
+
+        const nameLower = name.toLowerCase();
+        const quantityLower = quantity.toLowerCase();
+
+        const alreadyInRecipe = existingIngredients.some(
+          (item) => item.name === nameLower && item.quantity === quantityLower,
+        );
+
+        if (alreadyInRecipe) {
+          return acc;
+        }
+
+        const existsInAcc = acc.some(
+          (item) =>
+            item.name.toLowerCase() === nameLower &&
+            item.quantity.toLowerCase() === quantityLower,
+        );
+
+        if (!existsInAcc) {
+          acc.push({ name, quantity });
+        }
+
+        return acc;
+      },
+      [],
+    );
+
+    updateRecipeMutation.mutate({
+      recipeId: id,
+      payload: {
+        title: title.trim(),
+        description: description.trim(),
+        cookingTime: Number(cookingTime) || undefined,
+        difficulty,
+        ingredients: normalizedIngredients,
+      },
+    });
+  }
+
+  function handleStartEditing() {
+    if (!recipeData) {
+      return;
+    }
+
+    setTitle(recipeData.title ?? '');
+    setDescription(recipeData.description ?? '');
+    setCookingTime(recipeData.cookingTime?.toString() ?? '');
+    setDifficulty(recipeData.difficulty ?? 'EASY');
+    setIngredients(
+      (recipeData.ingredients ?? []).map((ingredient) => ({
+        name: ingredient.name.trim(),
+        quantity: ingredient.quantity.trim(),
+      })),
+    );
+    setIngredientName('');
+    setIngredientQuantity('');
+    setEditError('');
+    setIsEditing(true);
   }
 
   if (isLoading) {
@@ -73,30 +253,159 @@ export default function RecipeDetail() {
     return <p className={styles.notFound}>Recipe not found</p>;
   }
 
+  const isCreator = user?.user?.id === recipeData.author?.id;
+
   return (
     <div className={styles.container}>
+      <div className={styles.actions}>
+        {favouriteData ? (
+          <Button onClick={() => favouriteMutation.mutate(id!)}>
+            Remove from Favourites
+          </Button>
+        ) : (
+          <Button onClick={() => favouriteMutation.mutate(id!)}>
+            Add to Favourites
+          </Button>
+        )}
+      </div>
       <header className={styles.header}>
-        <h1 className={styles.title}>{recipeData.title}</h1>
-        <div className={styles.meta}>
-          <span>⏱ {recipeData.cookingTime} min</span>
-          <span>👤 {recipeData.author.name}</span>
-        </div>
+        {isEditing ? (
+          <div className={styles.editHeader}>
+            <input
+              className={styles.input}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <div className={styles.metaEdit}>
+              <label className={styles.label}>
+                ⏱
+                <input
+                  className={styles.input}
+                  type="number"
+                  min={0}
+                  value={cookingTime}
+                  onChange={(e) => setCookingTime(e.target.value)}
+                />
+                min
+              </label>
+              <label className={styles.label}>
+                🚩
+                <select
+                  className={styles.input}
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                >
+                  <option value="EASY">EASY</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HARD">HARD</option>
+                </select>
+              </label>
+              <span>👤 {recipeData.author.name}</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1 className={styles.title}>{recipeData.title}</h1>
+            <div className={styles.meta}>
+              <span>⏱ {recipeData.cookingTime} min</span>
+              <span>👤 {recipeData.author.name}</span>
+              <span>🚩 {recipeData.difficulty}</span>
+            </div>
+          </>
+        )}
       </header>
+
+      {isCreator && (
+        <div className={styles.actions}>
+          {isEditing ? (
+            <>
+              <button
+                className={styles.submitButton}
+                onClick={handleSaveRecipe}
+                disabled={updateRecipeMutation.isPending}
+              >
+                {updateRecipeMutation.isPending ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                className={styles.secondaryButton}
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <Button onClick={handleStartEditing}>Edit recipe</Button>
+          )}
+        </div>
+      )}
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Description</h2>
-        <p className={styles.description}>{recipeData.description}</p>
+        {isEditing ? (
+          <textarea
+            className={styles.textarea}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        ) : (
+          <p className={styles.description}>{recipeData.description}</p>
+        )}
       </section>
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>Ingredients</h2>
-        <ul className={styles.list}>
-          {recipeData.ingredients.map((ingredient) => (
-            <li key={ingredient.name}>
-              {ingredient.name} - {ingredient.quantity}
-            </li>
-          ))}
-        </ul>
+        {isEditing ? (
+          <div className={styles.ingredientsEditor}>
+            <div className={styles.ingredientInputs}>
+              <input
+                className={styles.input}
+                placeholder="Ingredient"
+                value={ingredientName}
+                onChange={(e) => setIngredientName(e.target.value)}
+              />
+              <input
+                className={styles.input}
+                placeholder="Quantity"
+                value={ingredientQuantity}
+                onChange={(e) => setIngredientQuantity(e.target.value)}
+              />
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={handleAddIngredient}
+              >
+                Add
+              </button>
+            </div>
+            <ul className={styles.list}>
+              {ingredients.map((ingredient, index) => (
+                <li
+                  key={`${ingredient.name}-${index}`}
+                  className={styles.ingredientItem}
+                >
+                  <span>
+                    {ingredient.name} - {ingredient.quantity}
+                  </span>
+                  <button
+                    className={styles.removeButton}
+                    type="button"
+                    onClick={() => handleRemoveIngredient(index)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <ul className={styles.list}>
+            {recipeData.ingredients.map((ingredient, index) => (
+              <li key={`${ingredient.name}-${index}`}>
+                {ingredient.name} - {ingredient.quantity}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -136,6 +445,8 @@ export default function RecipeDetail() {
 
         {submitError && <p className={styles.error}>{submitError}</p>}
       </section>
+
+      {editError && <p className={styles.error}>{editError}</p>}
     </div>
   );
 }

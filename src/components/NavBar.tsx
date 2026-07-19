@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useAuth } from '../context/useAuth';
 import styles from './NavBar.module.css';
 
@@ -6,17 +7,22 @@ export default function NavBar() {
   return (
     <header className={styles.header}>
       {isAuthenticated ? (
-        <a className={styles.link} href="/logout">
-          Logout
-        </a>
+        <>
+          <Link className={styles.link} to="/">
+            Recipes
+          </Link>
+          <Link className={styles.link} to="/logout">
+            Logout
+          </Link>
+        </>
       ) : (
         <>
-          <a className={styles.link} href="/login">
+          <Link className={styles.link} to="/login">
             Login
-          </a>
-          <a className={styles.link} href="/signup">
+          </Link>
+          <Link className={styles.link} to="/signup">
             Signup
-          </a>
+          </Link>
         </>
       )}
     </header>

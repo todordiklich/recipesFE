@@ -3,6 +3,7 @@ import type {
   ApiRecipesResponse,
   Comment,
   Recipe,
+  ApiFavouriteRecipeResponse,
 } from '../types/recipe.types';
 import { apiRequest } from './client';
 
@@ -33,6 +34,23 @@ export async function getRecipeById(id: string): Promise<Recipe> {
   });
 }
 
+export async function createRecipe(payload: Partial<Recipe>): Promise<Recipe> {
+  return apiRequest<Recipe>('/recipes', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateRecipe(
+  id: string,
+  payload: Partial<Recipe>,
+): Promise<Recipe> {
+  return apiRequest<Recipe>(`/recipes/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createComment(
   id: string,
   content: string,
@@ -41,4 +59,23 @@ export async function createComment(
     method: 'POST',
     body: JSON.stringify({ content }),
   });
+}
+
+export async function favouriteRecipe(
+  id: string,
+): Promise<ApiFavouriteRecipeResponse> {
+  return apiRequest<ApiFavouriteRecipeResponse>(`/recipes/favourite/${id}`, {
+    method: 'GET',
+  });
+}
+
+export async function addToFavourites(
+  id: string,
+): Promise<ApiFavouriteRecipeResponse> {
+  return apiRequest<ApiFavouriteRecipeResponse>(
+    `/recipes/addToFavourites/${id}`,
+    {
+      method: 'POST',
+    },
+  );
 }

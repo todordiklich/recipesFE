@@ -34,3 +34,8 @@ export interface ApiRecipesResponse {
   recipes?: Recipe[];
   pages?: number;
 }
+
+export interface ApiFavouriteRecipeResponse {
+  userId: number;
+  recipeId: number;
+}
