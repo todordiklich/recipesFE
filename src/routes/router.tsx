@@ -7,10 +7,12 @@ import Recipes from '../pages/Recipes';
 import RecipeDetail from '../pages/RecipeDetail';
 import Signup from '../pages/Signup';
 import Logout from '../pages/Logout';
+import ErrorPage from '../pages/ErrorPage';
 
 export const router = createBrowserRouter([
   {
     element: <App />,
+    errorElement: <ErrorPage />,
     children: [
       // Public routes
       {

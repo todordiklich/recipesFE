@@ -437,7 +437,7 @@ export default function RecipeDetail() {
           <button
             className={styles.submitButton}
             type="submit"
-            disabled={commentMutation.isPending}
+            disabled={commentMutation.isPending || commentText.trim() === ''}
           >
             {commentMutation.isPending ? 'Posting...' : 'Post comment'}
           </button>

@@ -39,3 +39,11 @@ export interface ApiFavouriteRecipeResponse {
   userId: number;
   recipeId: number;
 }
+
+export interface RecipeFilters {
+  title: string;
+  difficulty: 'ALL' | Difficulty;
+  cookingTime: string;
+  ingredientFilter: string;
+  showOnlyFavorites: boolean;
+}

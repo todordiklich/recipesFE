@@ -7,7 +7,7 @@ export default function RecipeList({ recipes }: { recipes: Recipe[] }) {
     <div>
       <ul className={styles.listContainer}>
         {recipes.map((recipe) => (
-          <RecipeItem recipe={recipe} />
+          <RecipeItem key={recipe.id} recipe={recipe} />
         ))}
       </ul>
     </div>

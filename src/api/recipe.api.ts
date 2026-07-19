@@ -12,6 +12,9 @@ export async function getRecipes(
   limit: number = 15,
   title: string = '',
   difficulty?: Difficulty,
+  cookingTime?: number,
+  ingredient?: string,
+  favorites?: boolean,
 ): Promise<ApiRecipesResponse> {
   const query = new URLSearchParams({
     page: String(page),
@@ -21,6 +24,18 @@ export async function getRecipes(
 
   if (difficulty) {
     query.set('difficulty', difficulty);
+  }
+
+  if (cookingTime !== undefined) {
+    query.set('cookingTime', String(cookingTime));
+  }
+
+  if (ingredient) {
+    query.set('ingredients', ingredient);
+  }
+
+  if (favorites) {
+    query.set('favorites', String(favorites));
   }
 
   return apiRequest<ApiRecipesResponse>(`/recipes?${query.toString()}`, {
