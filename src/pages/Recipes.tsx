@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
 import { createRecipe, getRecipes } from '../api/recipe.api';
 import RecipeList from '../components/RecipeList';
@@ -90,6 +95,8 @@ export default function Recipes() {
         urlFilters.ingredientFilter.trim() || undefined,
         urlFilters.showOnlyFavorites || undefined,
       ),
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60,
   });
 
   const createRecipeMutation = useMutation({

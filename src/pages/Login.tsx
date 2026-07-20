@@ -3,7 +3,7 @@ import { type SubmitEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import styles from './Login.module.css';
 import Button from '../components/Button';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');

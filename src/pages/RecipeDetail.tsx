@@ -11,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import styles from './RecipeDetail.module.css';
 import type { Difficulty, Ingredient, Recipe } from '../types/recipe.types';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
 
 export default function RecipeDetail() {
