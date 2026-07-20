@@ -13,6 +13,8 @@ import styles from './RecipeDetail.module.css';
 import type { Difficulty, Ingredient, Recipe } from '../types/recipe.types';
 import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
+import { createMealPlan } from '../api/mealPlan.api';
+import CreateMealPlanModal from '../components/CreateMealPlanModal';
 
 export default function RecipeDetail() {
   const { id } = useParams();
@@ -29,6 +31,7 @@ export default function RecipeDetail() {
   const [ingredientName, setIngredientName] = useState('');
   const [ingredientQuantity, setIngredientQuantity] = useState('');
   const [editError, setEditError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     data: recipeData,
     isLoading,
@@ -117,6 +120,17 @@ export default function RecipeDetail() {
     },
     onError: () => {
       setEditError('Unable to update the recipe right now.');
+    },
+  });
+
+  const createMealPlanMutation = useMutation({
+    mutationFn: ({ recipeId, date }: { recipeId: number; date: string }) =>
+      createMealPlan(recipeId, date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mealPlan'] });
+    },
+    onError: () => {
+      setSubmitError('Unable to update favourite status right now.');
     },
   });
 
@@ -241,6 +255,13 @@ export default function RecipeDetail() {
     setIsEditing(true);
   }
 
+  async function handleCreateMealPlan(payload: {
+    recipeId: number;
+    date: string;
+  }) {
+    await createMealPlanMutation.mutateAsync(payload);
+  }
+
   if (isLoading) {
     return <p className={styles.loading}>Loading...</p>;
   }
@@ -267,6 +288,7 @@ export default function RecipeDetail() {
             Add to Favourites
           </Button>
         )}
+        <Button onClick={() => setIsModalOpen(true)}>Create Meal Plan</Button>
       </div>
       <header className={styles.header}>
         {isEditing ? (
@@ -425,6 +447,14 @@ export default function RecipeDetail() {
             </div>
           );
         })}
+
+        <CreateMealPlanModal
+          id={Number(id!)}
+          isOpen={isModalOpen}
+          isSubmitting={createMealPlanMutation.isPending}
+          onClose={() => setIsModalOpen(false)}
+          onCreate={handleCreateMealPlan}
+        />
 
         <form className={styles.commentForm} onSubmit={handleSubmit}>
           <textarea

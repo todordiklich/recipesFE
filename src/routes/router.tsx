@@ -8,6 +8,7 @@ import RecipeDetail from '../pages/RecipeDetail';
 import Signup from '../pages/Signup';
 import Logout from '../pages/Logout';
 import ErrorPage from '../pages/ErrorPage';
+import MealPlans from '../pages/MealPlans';
 
 export const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ export const router = createBrowserRouter([
           {
             path: '/recipeDetail/:id',
             element: <RecipeDetail />,
+          },
+          {
+            path: '/mealPlans',
+            element: <MealPlans />,
           },
         ],
       },

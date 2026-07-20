@@ -11,6 +11,9 @@ export default function NavBar() {
           <Link className={styles.link} to="/">
             Recipes
           </Link>
+          <Link className={styles.link} to="/mealPlans">
+            My Meal Plans
+          </Link>
           <Link className={styles.link} to="/logout">
             Logout
           </Link>
